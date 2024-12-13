@@ -17,7 +17,7 @@ const App = () => {
 
   return (
     <div>
-      <h1>Image Capture and Integration</h1>
+      {/* <h1>Image Capture and Integration</h1> */}
 
       {isLoading && (
         <div className="loading-overlay">
@@ -29,7 +29,7 @@ const App = () => {
 
       {!isLoading && step === 1 && (
         <div className="container">
-          <h2>Welcome! Please Capture or Upload an Image</h2>
+          <h2>Welcome! Please Capture </h2>
           <div className="button-container">
             <button className="start-button btn btn-primary" onClick={goToNextStep}>
               Start
