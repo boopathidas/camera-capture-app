@@ -1,150 +1,3 @@
-// import React, { useRef, useState } from "react";
-// import Webcam from "react-webcam";
-
-// const CameraCapture = () => {
-//   const webcamRef = useRef(null);
-//   const [imageSrc, setImageSrc] = useState(null);
-//   const [currentScreen, setCurrentScreen] = useState(1); // Manage screens
-
-//   // Predefined user details for the ID card
-//   const userDetails = {
-//     name: "Boopathi D",
-//     age: 23,
-//     gender: "Male",
-//     college: "The Oxford College of Engineering",
-//     address: "Bangalore",
-//   };
-
-//   // Capture image from webcam
-//   const captureImage = () => {
-//     const image = webcamRef.current.getScreenshot();
-//     setImageSrc(image);
-//     setCurrentScreen(2); // Move to the second screen
-//   };
-
-//   // Handle "Complete" button click
-//   const handleComplete = () => {
-//     setCurrentScreen(3); // Move to the thank you screen
-//   };
-
-//   // Render the screens based on the currentScreen state
-//   return (
-//     <div style={styles.container}>
-//       {currentScreen === 1 && (
-//         <>
-//           <h2>Capture Your ID Card</h2>
-//           <div style={styles.camera}>
-//             <Webcam
-//               audio={false}
-//               ref={webcamRef}
-//               screenshotFormat="image/jpeg"
-//               width="60%"
-//             />
-//             <button style={styles.captureButton} onClick={captureImage}>
-//               Capture Photo
-//             </button>
-//           </div>
-//         </>
-//       )}
-
-//       {currentScreen === 2 && (
-//         <>
-//           <h2>Your ID Card</h2>
-//           <div style={styles.idCard}>
-//             <div style={styles.imageContainer}>
-//               <img
-//                 src={imageSrc}
-//                 alt="Captured"
-//                 style={styles.idImage}
-//               />
-//             </div>
-//             <div style={styles.detailsContainer}>
-//               <p><strong>Name:</strong> {userDetails.name}</p>
-//               <p><strong>Age:</strong> {userDetails.age}</p>
-//               <p><strong>Gender:</strong> {userDetails.gender}</p>
-//               <p><strong>College:</strong> {userDetails.college}</p>
-//               <p><strong>Address:</strong> {userDetails.address}</p>
-//             </div>
-//           </div>
-//           <button style={styles.completeButton} onClick={handleComplete}>
-//             Complete
-//           </button>
-//         </>
-//       )}
-
-//       {currentScreen === 3 && (
-//         <div>
-//           <h2>Thank You!</h2>
-//           <p>Your submission is completed.</p>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// const styles = {
-//   container: {
-//     textAlign: "center",
-//     padding: "20px",
-//     fontFamily: "Arial, sans-serif",
-//   },
-//   camera: {
-//     margin: "20px 0",
-//     position: "relative",
-//   },
-//   captureButton: {
-//     backgroundColor: "#007BFF",
-//     color: "#fff",
-//     border: "none",
-//     padding: "10px 20px",
-//     borderRadius: "5px",
-//     cursor: "pointer",
-//     position: "absolute",
-//     bottom: "-50px",
-//     left: "50%",
-//     transform: "translateX(-50%)",
-//   },
-//   idCard: {
-//     display: "flex",
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     border: "2px solid #000",
-//     borderRadius: "10px",
-//     padding: "20px",
-//     maxWidth: "500px",
-//     margin: "0 auto",
-//     backgroundColor: "#f9f9f9",
-//     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-//   },
-//   imageContainer: {
-//     marginRight: "20px",
-//   },
-//   idImage: {
-//     width: "120px",
-//     height: "150px",
-//     objectFit: "cover",
-//     borderRadius: "10px",
-//     border: "2px solid #ccc",
-//   },
-//   detailsContainer: {
-//     textAlign: "left",
-//   },
-//   completeButton: {
-//     backgroundColor: "#28A745",
-//     color: "#fff",
-//     border: "none",
-//     padding: "10px 20px",
-//     borderRadius: "5px",
-//     cursor: "pointer",
-//     marginTop: "20px",
-//   },
-// };
-
-// export default CameraCapture;
-// CameraCapture.js
-// CameraCapture.js
-// CameraCapture.js
 import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -153,6 +6,7 @@ import "font-awesome/css/font-awesome.min.css";
 const CameraCapture = ({ goToNextStep }) => {
   const webcamRef = useRef(null);
   const [images, setImages] = useState([]);
+  const [apiResponses, setApiResponses] = useState([]);
   const [currentScreen, setCurrentScreen] = useState(1);
   const [expiryDate, setExpiryDate] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -165,10 +19,24 @@ const CameraCapture = ({ goToNextStep }) => {
     address: "Bangalore",
   };
 
-  const captureImage = () => {
+  // Simulate a  API call
+  const fetchDummyApiResponse = (imageIndex) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(`Image ${imageIndex + 1} processed: Result OK`);
+      }, 1000); // Simulate network delay
+    });
+  };
+
+  const captureImage = async () => {
     const image = webcamRef.current.getScreenshot();
     if (image) {
+      const imageIndex = images.length;
       setImages((prevImages) => [...prevImages, image]);
+
+      // Call dummy API and add response
+      const apiResponse = await fetchDummyApiResponse(imageIndex);
+      setApiResponses((prevResponses) => [...prevResponses, apiResponse]);
     }
   };
 
@@ -180,6 +48,10 @@ const CameraCapture = ({ goToNextStep }) => {
     setCurrentScreen(2);
   };
 
+  const handleShowIDCard = () => {
+    setCurrentScreen(3);
+  };
+
   const handleComplete = () => {
     goToNextStep();
   };
@@ -189,11 +61,10 @@ const CameraCapture = ({ goToNextStep }) => {
       className="d-flex flex-column justify-content-center align-items-center vh-100 p-3"
       style={{ backgroundColor: "#f9f9f9", textAlign: "center" }}
     >
+      {/* Screen 1: Image Capture */}
       {currentScreen === 1 && (
         <div>
-          <h1 style={{ color: "#007bff", fontWeight: "bold" }}>
-            Image Capture
-          </h1>
+          <h1 style={{ color: "#007bff", fontWeight: "bold" }}>Image Capture</h1>
           <p className="mt-3" style={{ fontSize: "1.2rem", color: "#333" }}>
             Welcome! Please Capture Photos
           </p>
@@ -213,17 +84,19 @@ const CameraCapture = ({ goToNextStep }) => {
               <i className="fa fa-camera"></i> Capture
             </button>
           </div>
+          {/* Display Captured Photos */}
           <div className="mt-4">
             <h5>Captured Photos</h5>
             <div className="d-flex flex-wrap justify-content-center">
               {images.map((img, index) => (
-                <img
-                  key={index}
-                  src={img}
-                  alt={`Captured ${index + 1}`}
-                  className="img-thumbnail m-2"
-                  style={{ width: "80px", height: "80px", objectFit: "cover" }}
-                />
+                <div key={index} className="m-2 text-center">
+                  <img
+                    src={img}
+                    alt={`Captured ${index + 1}`}
+                    className="img-thumbnail"
+                    style={{ width: "80px", height: "80px", objectFit: "cover" }}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -237,7 +110,29 @@ const CameraCapture = ({ goToNextStep }) => {
         </div>
       )}
 
+      {/* Screen 2: Image Processing Results */}
       {currentScreen === 2 && (
+        <div>
+          <h2 className="mb-4">Image Processing Results</h2>
+          <ul className="list-group" style={{ maxWidth: "400px", margin: "0 auto" }}>
+            {apiResponses.map((response, index) => (
+              <li key={index} className="list-group-item">
+                {response}
+              </li>
+            ))}
+          </ul>
+          <button
+            className="btn btn-primary mt-4"
+            style={{ fontSize: "1rem", borderRadius: "25px" }}
+            onClick={handleShowIDCard}
+          >
+            Show ID Card
+          </button>
+        </div>
+      )}
+
+      {/* Screen 3: Display ID Card */}
+      {currentScreen === 3 && (
         <div>
           <h2 className="mb-4">Your ID Card</h2>
           <div className="card mx-auto" style={{ maxWidth: "400px" }}>
