@@ -10,6 +10,7 @@ const CameraCapture = ({ goToNextStep }) => {
   const [currentScreen, setCurrentScreen] = useState(1);
   const [ocrResults, setOcrResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const userDetails = {
     name: "Boopathi D",
@@ -75,61 +76,91 @@ const CameraCapture = ({ goToNextStep }) => {
   };
 
   // Send images to the OCR API with retry logic
-  const handleNext = async () => {
-    if (images.length === 0) {
-      alert("Please capture at least one image before proceeding.");
-      return;
+  // Inside your handleNext function
+// const handleNext = async () => {
+//   if (images.length === 0) {
+//     alert("Please capture at least one image before proceeding.");
+//     return;
+//   }
+
+//   setIsLoading(true);
+//   setErrorMessage(""); // Clear any previous errors
+
+//   const formData = new FormData();
+//   formData.append("file", images[0].file);
+//   formData.append("fields", "NAME");
+
+//   try {
+//     const response = await axios.post("http://127.0.0.1:8000/api/upload-image/", formData, {
+//       headers: { "Content-Type": "multipart/form-data" },
+//       timeout: 60000,
+//     });
+
+//     console.log("OCR API Response:", response.data);
+
+//     // Check if the response contains the image and OCR text
+//     if (response.data && response.data.image) {
+//       const imageUrl = `data:image/jpeg;base64,${response.data.image}`;
+
+//       // Set the image URL to display the image on the frontend
+//       setOcrResults(imageUrl);
+//     } else {
+//       alert("Failed to get image in the response.");
+//     }
+
+//     setCurrentScreen(2);
+//   } catch (error) {
+//     console.error("OCR API Error:", error.response || error.message);
+//     alert("Failed to process the image. Please check the logs.");
+//   } finally {
+//     setIsLoading(false);
+//   }
+// };
+
+const handleNext = async () => {
+  if (images.length === 0) {
+    alert("Please capture at least one image before proceeding.");
+    return;
+  }
+
+  setIsLoading(true);
+  setErrorMessage(""); // Clear any previous errors
+
+  const formData = new FormData();
+  formData.append("file", images[0].file);
+
+  try {
+    const response = await axios.post("http://127.0.0.1:8000/api/upload-image/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 60000,
+    });
+
+    console.log("OCR API Response:", response.data);
+
+    // Check if the response contains OCR text and extracted details
+    if (response.data && response.data.ocr_text) {
+      console.log("OCR Text:", response.data.ocr_text);
     }
 
-    try {
-      setIsLoading(true);
-      const formData = new FormData();
-      formData.append("file", images[0].file);
-      formData.append("fields", "NAME");
-
-      const MAX_RETRIES = 3;  // Limit the retries to 3 attempts
-      let attempt = 0;
-
-      const sendRequest = async () => {
-        try {
-          const response = await axios.post(
-            "http://216.48.177.53:8080/ocr/data", // Ensure this URL is correct
-            formData,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-              timeout: 60000,  // Increased to 60 seconds
-            }
-          );
-          
-          console.log("OCR API Response:", response.data); // Log the full response for debugging
-
-          if (response.data && response.data.result) {
-            setOcrResults(response.data.result);  // Update the state with the OCR result
-          } else {
-            alert("No OCR result found in the response.");
-          }
-          
-          setCurrentScreen(2);
-        } catch (error) {
-          if (attempt < MAX_RETRIES) {
-            attempt++;
-            console.error(`Retrying OCR API request... Attempt ${attempt}`);
-            setTimeout(sendRequest, 5000); // Retry after 5 seconds
-          } else {
-            console.error("OCR API Error:", error.message || error);
-            alert("Failed to process the image after multiple attempts. Please try again later.");
-          }
-        }
-      };
-
-      sendRequest();  // Start sending the request
-    } catch (error) {
-      console.error("Failed to send request:", error.message || error);
-      alert("An error occurred while processing your request. Please try again later.");
-    } finally {
-      setIsLoading(false);
+    if (response.data && response.data.extracted_details) {
+      console.log("Extracted Details:", response.data.extracted_details);
     }
-  };
+
+    if (response.data && response.data.image) {
+      const imageUrl = `data:image/jpeg;base64,${response.data.image}`;
+      setOcrResults(imageUrl);
+    } else {
+      alert("Failed to get image in the response.");
+    }
+
+    setCurrentScreen(2);
+  } catch (error) {
+    console.error("OCR API Error:", error.response || error.message);
+    alert("Failed to process the image. Please check the logs.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleComplete = () => {
     goToNextStep();
@@ -219,8 +250,18 @@ const CameraCapture = ({ goToNextStep }) => {
 
                 {ocrResults && (
                   <div className="mt-3">
-                    <h6>OCR Results:</h6>
-                    <pre>{JSON.stringify(ocrResults, null, 2)}</pre>
+                    <h6>Processed Image:</h6>
+                    <img
+                      src={ocrResults}
+                      alt="Processed"
+                      style={{ width: "200px", height: "auto" }}
+                    />
+                  </div>
+                )}
+
+                {errorMessage && (
+                  <div className="mt-3 text-danger">
+                    <strong>Error:</strong> {errorMessage}
                   </div>
                 )}
               </div>
