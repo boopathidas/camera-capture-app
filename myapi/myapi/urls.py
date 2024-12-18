@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('ocr_app.urls')),  # Your API routes
     path('', home, name='home'),  # Add this root URL
+
 ]

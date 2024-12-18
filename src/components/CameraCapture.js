@@ -11,6 +11,8 @@ const CameraCapture = ({ goToNextStep }) => {
   const [ocrResults, setOcrResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
 
   const userDetails = {
     name: "Boopathi D",
@@ -20,7 +22,6 @@ const CameraCapture = ({ goToNextStep }) => {
     address: "Bangalore",
   };
 
-  // Resize image to a max width and height (800px by default)
   const resizeImage = async (image, maxWidth = 800, maxHeight = 800) => {
     const img = new Image();
     img.src = image;
@@ -28,20 +29,15 @@ const CameraCapture = ({ goToNextStep }) => {
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
-
-        // Calculate the new dimensions
         const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
         canvas.width = img.width * ratio;
         canvas.height = img.height * ratio;
-
-        // Draw the image on the canvas and get the resized data URL
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         resolve(canvas.toDataURL("image/jpeg"));
       };
     });
   };
 
-  // Convert base64 to Blob
   const dataURLtoBlob = (dataURL) => {
     const arr = dataURL.split(",");
     const mime = arr[0].match(/:(.*?);/)[1];
@@ -54,115 +50,60 @@ const CameraCapture = ({ goToNextStep }) => {
     return new Blob([u8arr], { type: mime });
   };
 
-  // Capture an image using the webcam
   const captureImage = async () => {
     const image = webcamRef.current.getScreenshot();
     if (image) {
-      const resizedImage = await resizeImage(image); // Resize the image before saving
-
+      const resizedImage = await resizeImage(image);
       const blob = dataURLtoBlob(resizedImage);
-      const file = new File([blob], `capture_${Date.now()}.jpg`, {
-        type: blob.type,
-      });
-
+      const file = new File([blob], `capture_${Date.now()}.jpg`, { type: blob.type });
       setImages((prevImages) => [
         ...prevImages,
-        {
-          base64: resizedImage,
-          file: file,
-        },
+        { base64: resizedImage, file: file },
       ]);
     }
   };
 
-  // Send images to the OCR API with retry logic
-  // Inside your handleNext function
-// const handleNext = async () => {
-//   if (images.length === 0) {
-//     alert("Please capture at least one image before proceeding.");
-//     return;
-//   }
-
-//   setIsLoading(true);
-//   setErrorMessage(""); // Clear any previous errors
-
-//   const formData = new FormData();
-//   formData.append("file", images[0].file);
-//   formData.append("fields", "NAME");
-
-//   try {
-//     const response = await axios.post("http://127.0.0.1:8000/api/upload-image/", formData, {
-//       headers: { "Content-Type": "multipart/form-data" },
-//       timeout: 60000,
-//     });
-
-//     console.log("OCR API Response:", response.data);
-
-//     // Check if the response contains the image and OCR text
-//     if (response.data && response.data.image) {
-//       const imageUrl = `data:image/jpeg;base64,${response.data.image}`;
-
-//       // Set the image URL to display the image on the frontend
-//       setOcrResults(imageUrl);
-//     } else {
-//       alert("Failed to get image in the response.");
-//     }
-
-//     setCurrentScreen(2);
-//   } catch (error) {
-//     console.error("OCR API Error:", error.response || error.message);
-//     alert("Failed to process the image. Please check the logs.");
-//   } finally {
-//     setIsLoading(false);
-//   }
-// };
-
-const handleNext = async () => {
-  if (images.length === 0) {
-    alert("Please capture at least one image before proceeding.");
-    return;
-  }
-
-  setIsLoading(true);
-  setErrorMessage(""); // Clear any previous errors
-
-  const formData = new FormData();
-  formData.append("file", images[0].file);
-
-  try {
-    const response = await axios.post("http://127.0.0.1:8000/api/upload-image/", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      timeout: 60000,
-    });
-
-    console.log("OCR API Response:", response.data);
-
-    // Check if the response contains OCR text and extracted details
-    if (response.data && response.data.ocr_text) {
-      console.log("OCR Text:", response.data.ocr_text);
+  const handleNext = async () => {
+    if (images.length === 0) {
+      alert("Please capture at least one image before proceeding.");
+      return;
     }
 
-    if (response.data && response.data.extracted_details) {
-      console.log("Extracted Details:", response.data.extracted_details);
-    }
+    setIsLoading(true);
+    setErrorMessage(""); // Clear any previous errors
 
-    if (response.data && response.data.image) {
-      const imageUrl = `data:image/jpeg;base64,${response.data.image}`;
-      setOcrResults(imageUrl);
-    } else {
-      alert("Failed to get image in the response.");
-    }
+    const formData = new FormData();
+    formData.append("file", images[0].file);
 
-    setCurrentScreen(2);
-  } catch (error) {
-    console.error("OCR API Error:", error.response || error.message);
-    alert("Failed to process the image. Please check the logs.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/api/upload-image/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000,
+      });
+
+      console.log("OCR API Response:", response.data);
+
+      if (response.data && response.data.ocr_text) {
+        console.log("OCR Text:", response.data.ocr_text);
+        setOcrResults(response.data.ocr_text);
+      }
+
+      setCurrentScreen(2);
+    } catch (error) {
+      console.error("OCR API Error:", error.response || error.message);
+      alert("Failed to process the image. Please check the logs.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleComplete = () => {
+    if (!cardNumber || !expiryDate) {
+      alert("Please fill in all the details.");
+      return;
+    }
+
+    // If everything is correct, move to the next step
     goToNextStep();
   };
 
@@ -171,9 +112,7 @@ const handleNext = async () => {
       {currentScreen === 1 && (
         <div>
           <h1 className="text-primary fw-bold">Image Capture</h1>
-          <p className="mt-3 fs-5 text-secondary">
-            Welcome! Please capture a photo.
-          </p>
+          <p className="mt-3 fs-5 text-secondary">Welcome! Please capture a photo.</p>
           <div className="d-flex flex-column align-items-center mt-4">
             <Webcam
               audio={false}
@@ -250,20 +189,30 @@ const handleNext = async () => {
 
                 {ocrResults && (
                   <div className="mt-3">
-                    <h6>Processed Image:</h6>
-                    <img
-                      src={ocrResults}
-                      alt="Processed"
-                      style={{ width: "200px", height: "auto" }}
-                    />
+                    <h6>OCR Text:</h6>
+                    <p>{ocrResults}</p>
                   </div>
                 )}
 
-                {errorMessage && (
-                  <div className="mt-3 text-danger">
-                    <strong>Error:</strong> {errorMessage}
-                  </div>
-                )}
+                <div className="mt-3">
+                  <label className="form-label">Card Number:</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                  />
+                </div>
+
+                <div className="mt-3">
+                  <label className="form-label">Expiry Date:</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           </div>
