@@ -154,77 +154,88 @@ const CameraCapture = ({ goToNextStep }) => {
         </div>
       )}
 
-      {currentScreen === 2 && (
+{currentScreen === 2 && (
+  <div>
+    <h2 className="mb-4">Your ID Card</h2>
+    <div className="card mx-auto" style={{ maxWidth: "400px" }}>
+      <div className="card-body d-flex">
+        <img
+          src={images[0].base64}
+          alt="Captured"
+          className="img-thumbnail me-3"
+          style={{
+            width: "120px",
+            height: "150px",
+            objectFit: "cover",
+            borderRadius: "10px",
+          }}
+        />
         <div>
-          <h2 className="mb-4">Your ID Card</h2>
-          <div className="card mx-auto" style={{ maxWidth: "400px" }}>
-            <div className="card-body d-flex">
-              <img
-                src={images[0].base64}
-                alt="Captured"
-                className="img-thumbnail me-3"
-                style={{
-                  width: "120px",
-                  height: "150px",
-                  objectFit: "cover",
-                  borderRadius: "10px",
-                }}
-              />
-              <div>
-                <p>
-                  <strong>Name:</strong> {userDetails.name}
-                </p>
-                <p>
-                  <strong>Age:</strong> {userDetails.age}
-                </p>
-                <p>
-                  <strong>Gender:</strong> {userDetails.gender}
-                </p>
-                <p>
-                  <strong>College:</strong> {userDetails.college}
-                </p>
-                <p>
-                  <strong>Address:</strong> {userDetails.address}
-                </p>
+          <p>
+            <strong>Name:</strong> {userDetails.name}
+          </p>
+          <p>
+            <strong>Age:</strong> {userDetails.age}
+          </p>
+          <p>
+            <strong>Gender:</strong> {userDetails.gender}
+          </p>
+          <p>
+            <strong>College:</strong> {userDetails.college}
+          </p>
+          <p>
+            <strong>Address:</strong> {userDetails.address}
+          </p>
 
-                {ocrResults && (
-                  <div className="mt-3">
-                    <h6>OCR Text:</h6>
-                    <p>{ocrResults}</p>
-                  </div>
-                )}
-
-                <div className="mt-3">
-                  <label className="form-label">Card Number:</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                  />
-                </div>
-
-                <div className="mt-3">
-                  <label className="form-label">Expiry Date:</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                  />
-                </div>
-              </div>
+          {ocrResults && (
+            <div className="mt-3">
+              <h6>OCR Text:</h6>
+              <p>{ocrResults}</p> {/* Displaying the OCR text */}
             </div>
-          </div>
+          )}
 
-          <button
-            className="btn btn-success mt-4 rounded-pill"
-            onClick={handleComplete}
-          >
-            Complete
-          </button>
+<div className="mt-3">
+  <label className="form-label">Card Number:</label>
+  <input
+    type="text"
+    className="form-control"
+    value={cardNumber}
+    onChange={(e) => {
+      const inputValue = e.target.value.replace(/\D/g, ""); // Remove non-digit characters
+      const formattedValue = inputValue
+        .replace(/(\d{4})(?=\d)/g, "$1 ") // Format the input to have space every 4 digits
+        .slice(0, 19); // Limit to 16 digits (with spaces)
+      setCardNumber(formattedValue);
+    }}
+    maxLength={19} // Maximum length of 16 digits + 3 spaces
+    placeholder="XXXX XXXX XXXX XXXX"
+  />
+</div>
+
+
+          <div className="mt-3">
+  <label className="form-label">Expiry Date:</label>
+  <input
+    type="date"
+    className="form-control"
+    value={expiryDate}
+    onChange={(e) => setExpiryDate(e.target.value)}
+  />
+</div>
+
         </div>
-      )}
+      </div>
+    </div>
+
+    <button
+      className="btn btn-success mt-4 rounded-pill"
+      onClick={handleComplete}
+    >
+      Complete
+    </button>
+  </div>
+)}
+
     </div>
   );
 };
