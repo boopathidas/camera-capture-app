@@ -68,33 +68,39 @@ const CameraCapture = ({ goToNextStep }) => {
       alert("Please capture at least one image before proceeding.");
       return;
     }
-
+  
     setIsLoading(true);
     setErrorMessage(""); // Clear any previous errors
-
+  
     const formData = new FormData();
     formData.append("file", images[0].file);
-
+  
     try {
       const response = await axios.post("http://127.0.0.1:8000/api/upload-image/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: 60000,
       });
-
+  
       console.log("OCR API Response:", response.data);
-
+  
       if (response.data && response.data.ocr_text) {
-        console.log("OCR Text:", response.data.ocr_text);
+        // Set the OCR text to state
         setOcrResults(response.data.ocr_text);
       }
-
-      setCurrentScreen(2);
+  
+      setCurrentScreen(2); // Move to screen 2 after image processing
+  
     } catch (error) {
       console.error("OCR API Error:", error.response || error.message);
       alert("Failed to process the image. Please check the logs.");
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  
+  const handleFinalNext = () => {
+    setCurrentScreen(3); // Go to screen 3 when next is clicked on screen 2
   };
 
   const handleComplete = () => {
@@ -155,87 +161,119 @@ const CameraCapture = ({ goToNextStep }) => {
       )}
 
 {currentScreen === 2 && (
-  <div>
-    <h2 className="mb-4">Your ID Card</h2>
-    <div className="card mx-auto" style={{ maxWidth: "400px" }}>
-      <div className="card-body d-flex">
-        <img
-          src={images[0].base64}
-          alt="Captured"
-          className="img-thumbnail me-3"
-          style={{
-            width: "120px",
-            height: "150px",
-            objectFit: "cover",
-            borderRadius: "10px",
-          }}
-        />
-        <div>
-          <p>
-            <strong>Name:</strong> {userDetails.name}
-          </p>
-          <p>
-            <strong>Age:</strong> {userDetails.age}
-          </p>
-          <p>
-            <strong>Gender:</strong> {userDetails.gender}
-          </p>
-          <p>
-            <strong>College:</strong> {userDetails.college}
-          </p>
-          <p>
-            <strong>Address:</strong> {userDetails.address}
-          </p>
+  <div className="mt-4">
+    <h5>Final Details:</h5>
+    <textarea
+      className="form-control"
+      rows="6"  
+      readOnly
+      value={ocrResults ? ocrResults : "Image successfully captured."}
+      style={{
+        border: '2px solid #4CAF50',  // Green border to match success theme
+        borderRadius: '8px',          // Rounded corners for a modern look
+        padding: '10px',              // Padding inside the box for better readability
+        fontSize: '1rem',             // Slightly bigger text for better readability
+        backgroundColor: '#f4f8f4',   // Light background to differentiate it
+        color: '#333',                // Dark text color for better contrast
+        width: '100%',                // Full width of its container
+      }}
+    ></textarea>
 
-          {ocrResults && (
-            <div className="mt-3">
-              <h6>OCR Text:</h6>
-              <p>{ocrResults}</p> {/* Displaying the OCR text */}
-            </div>
-          )}
-
-<div className="mt-3">
-  <label className="form-label">Card Number:</label>
-  <input
-    type="text"
-    className="form-control"
-    value={cardNumber}
-    onChange={(e) => {
-      const inputValue = e.target.value.replace(/\D/g, ""); // Remove non-digit characters
-      const formattedValue = inputValue
-        .replace(/(\d{4})(?=\d)/g, "$1 ") // Format the input to have space every 4 digits
-        .slice(0, 19); // Limit to 16 digits (with spaces)
-      setCardNumber(formattedValue);
-    }}
-    maxLength={19} // Maximum length of 16 digits + 3 spaces
-    placeholder="XXXX XXXX XXXX XXXX"
-  />
-</div>
-
-
-          <div className="mt-3">
-  <label className="form-label">Expiry Date:</label>
-  <input
-    type="date"
-    className="form-control"
-    value={expiryDate}
-    onChange={(e) => setExpiryDate(e.target.value)}
-  />
-</div>
-
-        </div>
+    {!ocrResults && (
+      <div className="mt-2 text-success">
+        Image processed successfully!
       </div>
-    </div>
+    )}
 
     <button
-      className="btn btn-success mt-4 rounded-pill"
-      onClick={handleComplete}
+      className="btn btn-success mt-3 rounded-pill"
+      onClick={handleFinalNext} // Proceed to screen 3
     >
-      Complete
+      Next
     </button>
   </div>
 )}
 
+
+      {currentScreen === 3 && (
+        <div>
+          <h2 className="mb-4">Your ID Card</h2>
+          <div className="card mx-auto" style={{ maxWidth: "400px" }}>
+            <div className="card-body d-flex">
+              <img
+                src={images[0].base64}
+                alt="Captured"
+                className="img-thumbnail me-3"
+                style={{
+                  width: "120px",
+                  height: "150px",
+                  objectFit: "cover",
+                  borderRadius: "10px",
+                }}
+              />
+              <div>
+                <p>
+                  <strong>Name:</strong> {userDetails.name}
+                </p>
+                <p>
+                  <strong>Age:</strong> {userDetails.age}
+                </p>
+                <p>
+                  <strong>Gender:</strong> {userDetails.gender}
+                </p>
+                <p>
+                  <strong>College:</strong> {userDetails.college}
+                </p>
+                <p>
+                  <strong>Address:</strong> {userDetails.address}
+                </p>
+
+                {/* {ocrResults && (
+                  <div className="mt-3">
+                    <h6>OCR Text:</h6>
+                    <p>{ocrResults}</p>
+                  </div>
+                )} */}
+
+                <div className="mt-3">
+                  <label className="form-label">Card Number:</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={cardNumber}
+                    onChange={(e) => {
+                      const inputValue = e.target.value.replace(/\D/g, ""); // Remove non-digit characters
+                      const formattedValue = inputValue
+                        .replace(/(\d{4})(?=\d)/g, "$1 ") // Format the input to have space every 4 digits
+                        .slice(0, 19); // Limit to 16 digits (with spaces)
+                      setCardNumber(formattedValue);
+                    }}
+                    maxLength={19}
+                    placeholder="XXXX XXXX XXXX XXXX"
+                  />
+                </div>
+
+                <div className="mt-3">
+                  <label className="form-label">Expiry Date:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            className="btn btn-success mt-4 rounded-pill"
+            onClick={handleComplete}
+          >
+            Complete
+          </button>
+        </div>
+      )}
     </div>
   );
 };
